@@ -520,11 +520,19 @@ class Base64Field(FieldURIField):
             kwargs['is_searchable'] = False
         super(Base64Field, self).__init__(*args, **kwargs)
 
+    def get_character_set(self, elem):
+        el = elem.find(self.response_tag())
+        if el is None:
+            return 'ascii'
+        else:
+            return el.attrib.get('CharacterSet', 'ascii')
+
     def from_xml(self, elem, account):
         val = self._get_val_from_elem(elem)
+        charset = self.get_character_set(elem)
         if val is not None:
             try:
-                return base64.b64decode(val)
+                return base64.b64decode(val).decode(charset, 'ignore')
             except (TypeError, binascii.Error):
                 log.warning("Cannot convert value '%s' on field '%s' to type %s", val, self.name, self.value_cls)
                 return None
